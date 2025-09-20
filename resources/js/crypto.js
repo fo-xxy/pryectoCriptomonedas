@@ -144,6 +144,82 @@ function buscarInformacionCripto() {
         });
 }
 
+//Función para mostrar el historico
+async function historico() {
+    const response = await fetch('/Cryptolnvestment/public/crypto-history');
+    const historico = await response.json();
+
+    let html = `
+    <table id="cryptoTable">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Moneda</th>
+                <th>Precio USD</th>
+                <th>Cambio 24h %</th>
+                <th>Volumen 24h</th>
+            </tr>
+        </thead>
+        <tbody>
+    `;
+
+    historico.forEach(entry => {
+        const fecha = entry.timestamp.split(' ')[0];
+        entry.data.forEach(crypto => {
+            html += `
+                <tr>
+                    <td>${fecha}</td>
+                    <td>${crypto.name} (${crypto.symbol})</td>
+                    <td>${crypto.price_usd.toFixed(2)}</td>
+                    <td>${crypto.percent_change_24h.toFixed(2)}%</td>
+                    <td>${crypto.volume_24h.toLocaleString()}</td>
+                </tr>
+            `;
+        });
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('crypto-table').innerHTML = html;
+
+    //Valida si la tabla ya existem, sino la elimina
+    if ($.fn.DataTable.isDataTable('#cryptoTable')) {
+        $('#cryptoTable').DataTable().clear().destroy();
+    }
+
+    const table = $('#cryptoTable').DataTable({
+        order: [[0, 'asc']]
+    });
+
+
+    $.fn.dataTable.ext.search.push(function (settings, data) {
+        const from = document.getElementById('fechaDesde').value;
+        const to = document.getElementById('fechaHasta').value;
+        const date = data[0]; // Columna 0: fecha (YYYY-MM-DD)
+
+        if (!from && !to) return true;
+        if (from && !to) return date >= from;
+        if (!from && to) return date <= to;
+        return date >= from && date <= to;
+    });
+
+    document.getElementById('fechaDesde').addEventListener('change', () => table.draw());
+    document.getElementById('fechaHasta').addEventListener('change', () => table.draw());
+
+}
+
+//Se llaman las funciones para que se ejecuten al inicializar la pagina 
+cargarCriptomonedas();
+
+//Se realiza una petición cada 30 segundos
+setInterval(cargarCriptomonedas, 30000);
+
+//Se llaman las funciones para que se ejecuten al inicializar la pagina 
+historico();
+
+window.onload = function () {
+    cargarCriptomonedas(); // Línea 3
+};
+
 
 
 
